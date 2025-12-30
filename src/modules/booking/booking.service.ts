@@ -1,12 +1,10 @@
 import { pool } from "../../config/db";
 
-/* ================================
-   1. CREATE BOOKING
-================================ */
+//  ----------------------- Create Booking ------------------------
 const createBooking = async (payload: any) => {
   const { customer_id, vehicle_id, rent_start_date, rent_end_date } = payload;
 
-  // 1️⃣ Vehicle check
+  //  Vehicle check
   const vehicleResult = await pool.query(
     `SELECT vehicle_name, daily_rent_price, availability_status 
      FROM vehicles WHERE id = $1`,
@@ -23,7 +21,7 @@ const createBooking = async (payload: any) => {
     throw new Error("Vehicle is not available");
   }
 
-  // 2️⃣ Date calculation
+  //  Date calculation
   const start = new Date(rent_start_date);
   const end = new Date(rent_end_date);
 
@@ -35,7 +33,7 @@ const createBooking = async (payload: any) => {
 
   const total_price = days * vehicle.daily_rent_price;
 
-  // 3️⃣ Insert booking
+  //  Insert booking
   const bookingResult = await pool.query(
     `
     INSERT INTO bookings 
@@ -46,7 +44,7 @@ const createBooking = async (payload: any) => {
     [customer_id, vehicle_id, rent_start_date, rent_end_date, total_price]
   );
 
-  // 4️⃣ Update vehicle status
+  //  Update vehicle status
   await pool.query(
     `UPDATE vehicles SET availability_status='booked' WHERE id=$1`,
     [vehicle_id]
@@ -54,7 +52,7 @@ const createBooking = async (payload: any) => {
 
   const booking = bookingResult.rows[0];
 
-  // 5️⃣ EXACT requirement response shape
+  // format response
   return {
     ...booking,
     rent_start_date: rent_start_date,
@@ -66,9 +64,7 @@ const createBooking = async (payload: any) => {
     },
   };
 };
-/* ================================
-   2. GET ALL BOOKINGS
-================================ */
+// ---------------------------- get all bookings ---------------------------
 const getAllBookings = async (userId: number, role: string) => {
   let query = "";
   let params: any[] = [];
@@ -112,7 +108,7 @@ const getAllBookings = async (userId: number, role: string) => {
       status: res.status,
     };
 
-    // 🔵 ADMIN RESPONSE
+    // admin response
     if (role === "admin") {
       baseBooking.customer = {
         name: res.customer_name,
@@ -125,7 +121,7 @@ const getAllBookings = async (userId: number, role: string) => {
       };
     }
 
-    // 🟢 CUSTOMER RESPONSE
+    //  customer response
     if (role === "customer") {
       baseBooking.vehicle = {
         vehicle_name: res.vehicle_name,
@@ -139,7 +135,7 @@ const getAllBookings = async (userId: number, role: string) => {
 
   return formattedBookings;
 };
-
+// ----------------------- Update Booking ---------------------
 const updateBookingStatus = async (
   bookingId: number,
   status: string,
