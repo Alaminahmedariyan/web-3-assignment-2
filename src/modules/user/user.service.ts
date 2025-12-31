@@ -1,4 +1,4 @@
-import bcrypt from "bcryptjs";
+
 import { pool } from "../../config/db";
 
 // get all users service 
